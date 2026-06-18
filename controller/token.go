@@ -201,6 +201,11 @@ func AddToken(c *gin.Context) {
 		})
 		return
 	}
+	tokenGroup, err := normalizeTokenGroupForCurrentUser(c, token.Group)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	key, err := common.GenerateKey()
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgTokenGenerateFailed)
@@ -219,7 +224,7 @@ func AddToken(c *gin.Context) {
 		ModelLimitsEnabled: token.ModelLimitsEnabled,
 		ModelLimits:        token.ModelLimits,
 		AllowIps:           token.AllowIps,
-		Group:              token.Group,
+		Group:              tokenGroup,
 		CrossGroupRetry:    token.CrossGroupRetry,
 	}
 	err = cleanToken.Insert()
@@ -297,7 +302,12 @@ func UpdateToken(c *gin.Context) {
 		cleanToken.ModelLimitsEnabled = token.ModelLimitsEnabled
 		cleanToken.ModelLimits = token.ModelLimits
 		cleanToken.AllowIps = token.AllowIps
-		cleanToken.Group = token.Group
+		tokenGroup, err := normalizeTokenGroupForCurrentUser(c, token.Group)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		cleanToken.Group = tokenGroup
 		cleanToken.CrossGroupRetry = token.CrossGroupRetry
 	}
 	err = cleanToken.Update()
